@@ -1,15 +1,12 @@
 use shared::Process;
 use std::error::Error;
-use std::fmt::format;
 use std::fs::{DirEntry, File, ReadDir, read_dir};
 use std::io::Read;
-use std::os::linux::raw::stat;
-use std::os::unix::raw::uid_t;
 use std::path::PathBuf;
 
 const PROC_PATH: &str = "/proc";
 
-pub fn get_process_ids() -> Result<Vec<u64>, Box<dyn Error>> {
+fn get_process_ids() -> Result<Vec<u64>, Box<dyn Error>> {
     let dir = read_dir(PROC_PATH)?;
     Ok(dir
         .into_iter()
@@ -24,11 +21,30 @@ pub fn get_process_details(id: u64, uptime: f64) -> Result<Process, Box<dyn Erro
     let mut status_file = File::open(base.join("status"))?;
     let mut stat_file = File::open(base.join("stat"))?;
     let mut smaps_rollup_file = File::open(base.join("smaps_rollup"))?;
-    let name = get_name(&mut status_file)?;
+    let (name, threads) = get_name(&mut status_file)?;
     let (ultime, stime, start_time) = get_ultime_and_time(&mut stat_file)?;
     let cpu_usage = Process::calculate_cpu_usage(ultime, stime, start_time, uptime);
-    
-    Ok(Process::new(id, name, 0, 0, cpu_usage, 0))
+    let (rss, pss) = get_rss_and_pss(&mut smaps_rollup_file)?;
+    println!("{}", threads);
+    Ok(Process::new(id, name, rss, pss, cpu_usage, threads))
+}
+
+fn get_rss_and_pss(smaps_roll_up_file: &mut File) -> Result<(u64, u64), Box<dyn Error>> {
+    let mut contents = String::from("");
+    smaps_roll_up_file.read_to_string(&mut contents)?;
+    let contents = contents.lines().collect::<Vec<_>>();
+    let rss = contents
+        .iter()
+        .find(|x| x.starts_with("Rss:"))
+        .and_then(|x| x[4..].replace(" kB", "").trim().parse().ok())
+        .unwrap_or(0);
+    let pss = contents
+        .iter()
+        .find(|x| x.starts_with("Pss:"))
+        .and_then(|x| x[4..].replace(" kB", "").trim().parse().ok())
+        .unwrap_or(0);
+    print!("{:#?}", pss);
+    Ok((rss, pss))
 }
 
 fn get_ultime_and_time(stat_file: &mut File) -> Result<(f64, f64, f64), Box<dyn Error>> {
@@ -41,15 +57,20 @@ fn get_ultime_and_time(stat_file: &mut File) -> Result<(f64, f64, f64), Box<dyn 
     Ok((ultime, stime, start_time))
 }
 
-fn get_name(status_file: &mut File) -> Result<String, Box<dyn Error>> {
+fn get_name(status_file: &mut File) -> Result<(String, u64), Box<dyn Error>> {
     let mut content = String::from("");
     status_file.read_to_string(&mut content)?;
-    let name = content.lines().collect::<Vec<_>>();
-    let name = &name.get(0).unwrap_or(&"Name: Unknown")[6..];
-    Ok(name.to_string())
+    let content = content.lines().collect::<Vec<_>>();
+    let name = &content.get(0).unwrap_or(&"Name: Unknown")[6..];
+    let threads = content
+        .iter()
+        .find(|x| x.starts_with("Threads: "))
+        .and_then(|x| x[8..].trim().parse().ok())
+        .unwrap_or(1);
+    Ok((name.to_string(), threads))
 }
 
-pub fn get_uptime() -> Result<f64, Box<dyn Error>> {
+fn get_uptime() -> Result<f64, Box<dyn Error>> {
     let mut uptime_string = String::from("");
     let mut uptime_file = File::open("/proc/uptime")?;
     uptime_file.read_to_string(&mut uptime_string)?;
@@ -64,4 +85,9 @@ pub fn get_uptime() -> Result<f64, Box<dyn Error>> {
         Err(e) => Err(Box::new(e)),
         Ok(v) => Ok(v),
     }
+}
+
+fn get_machine_id() -> Result<String, Box<dyn Error>> {
+    let id = std::fs::read_to_string("/etc/machine-id")?;
+    Ok(id)
 }
