@@ -14,7 +14,8 @@ pub fn collect_processes_data() -> Result<Processes, Box<dyn Error>> {
         .into_iter()
         .filter_map(|x| get_process_details(x, uptime).ok())
         .for_each(|x| processes.add_process(x));
-
+    processes.finalize();
+    
     Ok(processes)
 }
 
