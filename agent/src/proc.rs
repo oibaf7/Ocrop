@@ -1,10 +1,22 @@
-use shared::Process;
+use shared::{Process, Processes};
 use std::error::Error;
 use std::fs::{DirEntry, File, ReadDir, read_dir};
 use std::io::Read;
 use std::path::PathBuf;
 
 const PROC_PATH: &str = "/proc";
+
+pub fn collect_processes_data() -> Result<Processes, Box<dyn Error>> {
+    let machine_id = get_machine_id()?;
+    let uptime = get_uptime()?;
+    let mut processes = Processes::new(machine_id);
+    get_process_ids()?
+        .into_iter()
+        .filter_map(|x| get_process_details(x, uptime).ok())
+        .for_each(|x| processes.add_process(x));
+
+    Ok(processes)
+}
 
 fn get_process_ids() -> Result<Vec<u64>, Box<dyn Error>> {
     let dir = read_dir(PROC_PATH)?;
@@ -25,7 +37,6 @@ pub fn get_process_details(id: u64, uptime: f64) -> Result<Process, Box<dyn Erro
     let (ultime, stime, start_time) = get_ultime_and_time(&mut stat_file)?;
     let cpu_usage = Process::calculate_cpu_usage(ultime, stime, start_time, uptime);
     let (rss, pss) = get_rss_and_pss(&mut smaps_rollup_file)?;
-    println!("{}", threads);
     Ok(Process::new(id, name, rss, pss, cpu_usage, threads))
 }
 
@@ -43,7 +54,6 @@ fn get_rss_and_pss(smaps_roll_up_file: &mut File) -> Result<(u64, u64), Box<dyn 
         .find(|x| x.starts_with("Pss:"))
         .and_then(|x| x[4..].replace(" kB", "").trim().parse().ok())
         .unwrap_or(0);
-    print!("{:#?}", pss);
     Ok((rss, pss))
 }
 
@@ -64,8 +74,10 @@ fn get_name(status_file: &mut File) -> Result<(String, u64), Box<dyn Error>> {
     let name = &content.get(0).unwrap_or(&"Name: Unknown")[6..];
     let threads = content
         .iter()
-        .find(|x| x.starts_with("Threads: "))
-        .and_then(|x| x[8..].trim().parse().ok())
+        .find(|x| x.starts_with("Threads:"))
+        .and_then(|x| {
+            x[8..].trim().parse().ok()
+        })
         .unwrap_or(1);
     Ok((name.to_string(), threads))
 }
