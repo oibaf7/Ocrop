@@ -26,8 +26,10 @@ fn main() {
 fn run(stream: &mut TcpStream) -> Result<(), Box<dyn Error>> {
     loop {
         let processes = collect_processes_data()?;
-        let json = serde_json::to_string(&processes)?;
+        let json = serde_json::to_string(&processes)? + "\n";
+        println!("{}", json);
         stream.write_all(json.as_bytes())?;
+        println!("Data has been sent!");
         thread::sleep(Duration::from_secs(5));
     }
 }

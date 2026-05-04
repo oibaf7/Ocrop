@@ -59,3 +59,7 @@ metrics/
 ## Relevant Terms
 
 `process monitoring` · `metrics collection` · `observability` · `telemetry` · `pull vs push metrics` · `Prometheus data model`
+
+## Notes
+
+- Improve cpu usage formula (move from average to more real time collection)
