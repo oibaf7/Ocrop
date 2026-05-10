@@ -6,10 +6,25 @@ use std::net::TcpStream;
 use std::thread;
 use std::time::Duration;
 use crate::proc::{collect_processes_data};
-//add config file eventually
+use config::{Config, File};
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct Settings {
+    address: String,
+    delay: u64,
+}
+
 fn main() {
+    let settings = Config::builder()
+        .add_source(File::with_name("Config.toml"))
+        .build().expect("File in the wrong format!")
+        .try_deserialize::<Settings>().expect("Could not deserialize! Check configuration file!");
+
+    println!("{:#?}", settings);
+
     loop {
-        match TcpStream::connect("127.0.0.1:7878") {
+        match TcpStream::connect(&settings.address) {
             Ok(mut stream) => {
                 if let Err(e) = run(&mut stream) {
                     println!("Error while serializing/sending data. Error: {e}");
@@ -19,7 +34,7 @@ fn main() {
                 println!("Error while trying to connect! Retrying. Error: {e}");
             }
         }
-        thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(settings.delay));
     }
 }
 
