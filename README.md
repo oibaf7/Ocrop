@@ -1,4 +1,4 @@
-# proc-monitor (or whatever you want to call it)
+# Ocrop
 
 A Linux system metrics collector written in Rust. Reads process data 
 from `/proc` and aggregates TCP connection stats.
