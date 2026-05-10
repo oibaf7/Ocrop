@@ -105,13 +105,13 @@ impl SnapShotCollector {
     }
 
     pub fn get(&mut self, pid: u64) -> ProcessSnapShot{
-        self.map.remove(&pid).unwrap_or(ProcessSnapShot::default())
+        self.map.remove(&pid).unwrap_or_default()
     }
 
 }
 
-impl ProcessSnapShot {
-    pub fn default() -> Self {
+impl Default for ProcessSnapShot {
+    fn default() -> Self {
         Self {
             ultime: 0.0,
             stime: 0.0,
@@ -119,3 +119,4 @@ impl ProcessSnapShot {
         }
     }
 }
+

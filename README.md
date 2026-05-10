@@ -4,7 +4,7 @@ A Linux system metrics collector written in Rust. Reads process data
 from `/proc` and aggregates TCP connection stats.
 
 ## Architecture
-- `collector` — reads /proc, computes CPU/memory metrics per process
+- `agent` — reads /proc, computes CPU/memory metrics per process
 - `aggregator` — collects TCP connection data
 - `shared` — common types
 
