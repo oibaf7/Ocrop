@@ -62,4 +62,4 @@ metrics/
 
 ## Notes
 
-- Improve cpu usage formula (move from average to more real time collection)
+- Improve cpu usage calculation, do per core/thread to not exceed 100%
