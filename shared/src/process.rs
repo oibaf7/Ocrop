@@ -2,16 +2,15 @@ use std::collections::HashMap;
 use std::time::{Instant, SystemTime};
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 #[derive(Serialize, Deserialize)]
 pub struct Processes {
     id: String,
-    time_stamp: SystemTime,
     processes: Vec<Process>,
     total_threads: u64,
     total_avg_cpu: f64,
     total_instant_cpu: f64,
-    total_pss: u64,
+    pub total_pss: u64,
 }
 
 #[derive(Debug)]
@@ -72,7 +71,6 @@ impl Processes {
     pub fn new(id: String) -> Self {
         Self {
             id,
-            time_stamp: SystemTime::now(),
             processes: Vec::new(),
             total_threads: 0,
             total_pss: 0,

@@ -10,3 +10,6 @@ from `/proc` and aggregates TCP connection stats.
 
 ## Run
 cargo run --bin collector
+
+## Notes
+add count for TCP connections established
