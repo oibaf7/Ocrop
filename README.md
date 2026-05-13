@@ -13,4 +13,4 @@ cargo run --bin collector
 
 ## Notes
 add count for TCP connections established
-take into consideration cores when calculating CPU related metrics
+implement into app processes aggregator rendering

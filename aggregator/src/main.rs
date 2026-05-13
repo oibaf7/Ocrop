@@ -11,8 +11,20 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
 use std::{io, thread};
+use config::{Config, File};
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct Settings {
+    timeout: u64,
+}
 
 fn main() -> Result<(), io::Error> {
+    let settings = Config::builder().add_source(File::with_name("Config.toml"))
+        .build()
+        .expect("File in the wrong format!")
+        .try_deserialize::<Settings>()
+        .expect("Could not deserialize! Check configuration file!");
     let (tx, rx) = mpsc::channel::<SystemEvent>();
     check_for_key_events(tx.clone());
     thread::spawn(move || {

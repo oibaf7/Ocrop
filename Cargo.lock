@@ -16,8 +16,10 @@ dependencies = [
 name = "aggregator"
 version = "0.1.0"
 dependencies = [
+ "config",
  "crossterm",
  "ratatui",
+ "serde",
  "serde_json",
  "shared",
 ]

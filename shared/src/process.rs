@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::time::{Instant, SystemTime};
+use std::time::{Duration, Instant, SystemTime};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Default)]
@@ -34,6 +34,17 @@ pub struct ProcessSnapShot {
 pub struct SnapShotCollector {
     map: HashMap<u64, ProcessSnapShot>,
 }
+
+struct ProcessesSnapShot {
+    processes: Processes,
+    time_stamp: Instant
+}
+
+pub struct ProcessesAggregator {
+    map: HashMap<String, ProcessesSnapShot>,
+    timeout: u64,
+}
+
 
 const CLK_TCK: u64 = 100;
 
@@ -116,5 +127,26 @@ impl Default for ProcessSnapShot {
             uptime: 0.0,
         }
     }
+}
+
+impl ProcessesAggregator {
+    pub fn new(timeout: u64) -> Self {
+        ProcessesAggregator {
+            map: HashMap::new(),
+            timeout
+        }
+    }
+    pub fn put(&mut self, processes: Processes) {
+        let id = processes.id.clone();
+        let p = ProcessesSnapShot {processes, time_stamp: Instant::now()};
+        self.map.insert(id, p);
+    }
+
+    pub fn prune(&mut self) {
+        self.map.retain(|_, snapshot| {
+           snapshot.time_stamp.elapsed() < Duration::from_secs(self.timeout)
+        });
+    }
+
 }
 
