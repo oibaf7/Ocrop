@@ -12,5 +12,6 @@ from `/proc` and aggregates TCP connection stats.
 cargo run --bin collector
 
 ## Notes
-add count for TCP connections established
-implement into app processes aggregator rendering
+- add count for TCP connections established
+- implement into app processes aggregator rendering
+- think about concurrency for hash map
