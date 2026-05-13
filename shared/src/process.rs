@@ -49,13 +49,13 @@ impl Process {
             threads,
         }
     }
-    pub fn calculate_avg_cpu_usage(ultime: f64, stime: f64, start_time: f64, uptime: f64) -> f64 {
+    pub fn calculate_avg_cpu_usage(ultime: f64, stime: f64, start_time: f64, uptime: f64, cores: u64) -> f64 {
         let usage: f64 = (ultime + stime) / CLK_TCK as f64;
         let total_time = uptime - (start_time / CLK_TCK as f64);
-        usage / total_time * 100.0
+        (usage / total_time * 100.0) / cores as f64
     }
 
-    pub fn calculate_instant_cpu_usage(curr : &ProcessSnapShot, prev : &ProcessSnapShot) -> f64 {
+    pub fn calculate_instant_cpu_usage(curr : &ProcessSnapShot, prev : &ProcessSnapShot, cores: u64) -> f64 {
         let delta_cpu = (curr.ultime + curr.stime) - (prev.ultime + prev.stime);
         let delta_time = curr.uptime - prev.uptime; // Δuptime = elapsed real time since start time is fixed
 
@@ -63,7 +63,7 @@ impl Process {
             return 0.0;
         }
 
-        (delta_cpu / CLK_TCK as f64) / delta_time * 100.0
+        ((delta_cpu / CLK_TCK as f64) / delta_time * 100.0) / cores as f64
     }
 }
 
@@ -102,7 +102,7 @@ impl SnapShotCollector {
         self.map.insert(pid, snapshot);
     }
 
-    pub fn get(&mut self, pid: u64) -> ProcessSnapShot{
+    pub fn get(&mut self, pid: u64) -> ProcessSnapShot {
         self.map.remove(&pid).unwrap_or_default()
     }
 

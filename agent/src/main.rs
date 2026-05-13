@@ -7,6 +7,7 @@ use shared::SnapShotCollector;
 use std::error::Error;
 use std::io::Write;
 use std::net::TcpStream;
+use std::num::NonZero;
 use std::thread;
 use std::time::Duration;
 
@@ -25,11 +26,13 @@ fn main() {
         .expect("Could not deserialize! Check configuration file!");
 
     println!("{:#?}", settings);
-
+    let cores = thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1) as u64;
     loop {
         match TcpStream::connect(&settings.address) {
             Ok(mut stream) => {
-                if let Err(e) = run(&mut stream, &settings) {
+                if let Err(e) = run(&mut stream, &settings, cores) {
                     println!("Error while serializing/sending data. Error: {e}");
                 }
             }
@@ -41,10 +44,10 @@ fn main() {
     }
 }
 
-fn run(stream: &mut TcpStream, settings: &Settings) -> Result<(), Box<dyn Error>> {
+fn run(stream: &mut TcpStream, settings: &Settings, cores: u64) -> Result<(), Box<dyn Error>> {
     let mut collector = SnapShotCollector::new();
     loop {
-        let processes = collect_processes_data(&mut collector)?;
+        let processes = collect_processes_data(&mut collector, cores)?;
         let json = serde_json::to_string(&processes)? + "\n";
         println!("{}", json);
         stream.write_all(json.as_bytes())?;

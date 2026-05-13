@@ -9,13 +9,14 @@ const PROC_PATH: &str = "/proc";
 
 pub fn collect_processes_data(
     collector: &mut SnapShotCollector,
+    cores: u64
 ) -> Result<Processes, Box<dyn Error>> {
     let machine_id = get_machine_id()?;
     let uptime = get_uptime()?;
     let mut processes = Processes::new(machine_id);
     get_process_ids()?
         .into_iter()
-        .filter_map(|x| get_process_details(x, uptime, collector).ok())
+        .filter_map(|x| get_process_details(x, uptime, collector, cores).ok())
         .for_each(|x| processes.add_process(x));
     processes.finalize();
 
@@ -36,6 +37,7 @@ pub fn get_process_details(
     id: u64,
     uptime: f64,
     collector: &mut SnapShotCollector,
+    cores: u64
 ) -> Result<Process, Box<dyn Error>> {
     let base = PathBuf::from(PROC_PATH).join(id.to_string());
     let mut status_file = File::open(base.join("status"))?;
@@ -43,14 +45,14 @@ pub fn get_process_details(
     let mut smaps_rollup_file = File::open(base.join("smaps_rollup"))?;
     let (name, threads) = get_name(&mut status_file)?;
     let (ultime, stime, start_time) = get_ultime_and_time(&mut stat_file)?;
-    let avg_cpu_usage = Process::calculate_avg_cpu_usage(ultime, stime, start_time, uptime);
+    let avg_cpu_usage = Process::calculate_avg_cpu_usage(ultime, stime, start_time, uptime, cores);
     let (rss, pss) = get_rss_and_pss(&mut smaps_rollup_file)?;
     let snapshot = ProcessSnapShot {
         ultime,
         stime,
         uptime,
     };
-    let instant_cpu_usage = Process::calculate_instant_cpu_usage(&snapshot, &collector.get(id));
+    let instant_cpu_usage = Process::calculate_instant_cpu_usage(&snapshot, &collector.get(id), cores);
     collector.add(id, snapshot);
     Ok(Process::new(
         id,

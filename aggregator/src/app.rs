@@ -1,5 +1,8 @@
 use crate::event::SystemEvent;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use ratatui::layout::{Constraint, Layout};
+use ratatui::style::{Color, Style};
+use ratatui::widgets::{Row, Table};
 use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
@@ -12,9 +15,6 @@ use ratatui::{
 use shared::{Process, Processes, process};
 use std::sync::mpsc::Receiver;
 use std::{io, thread};
-use ratatui::layout::{Constraint, Layout};
-use ratatui::style::{Color, Style};
-use ratatui::widgets::{Row, Table};
 
 pub struct App {
     rx: Receiver<SystemEvent>,
