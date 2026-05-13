@@ -5,24 +5,24 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, Default)]
 #[derive(Serialize, Deserialize)]
 pub struct Processes {
-    id: String,
-    processes: Vec<Process>,
-    total_threads: u64,
-    total_avg_cpu: f64,
-    total_instant_cpu: f64,
+    pub id: String,
+    pub processes: Vec<Process>,
+    pub total_threads: u64,
+    pub total_avg_cpu: f64,
+    pub total_instant_cpu: f64,
     pub total_pss: u64,
 }
 
 #[derive(Debug)]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Process {
-    pid: u64,     //from folder name
-    name: String, //from the status file
-    rss: u64,     //in Kb
-    pss: u64,     //in Kb
-    avg_cpu_usage: f64,
-    instant_cpu_usage: f64,
-    threads: u64,
+    pub pid: u64,     //from folder name
+    pub name: String, //from the status file
+    pub rss: u64,     //in Kb
+    pub pss: u64,     //in Kb
+    pub avg_cpu_usage: f64,
+    pub instant_cpu_usage: f64,
+    pub threads: u64,
 }
 
 pub struct ProcessSnapShot {

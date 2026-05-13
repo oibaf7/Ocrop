@@ -15,7 +15,7 @@ use std::{io, thread};
 fn main() -> Result<(), io::Error> {
     let (tx, rx) = mpsc::channel::<SystemEvent>();
     check_for_key_events(tx.clone());
-    thread::spawn(move ||{
+    thread::spawn(move || {
         let listener = TcpListener::bind("127.0.0.1:7878").expect("Could not bind TCP listener");
         for stream in listener.incoming() {
             let tx = tx.clone();
