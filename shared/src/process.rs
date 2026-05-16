@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant, SystemTime};
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, )]
 #[derive(Serialize, Deserialize)]
 pub struct Processes {
     pub id: String,
@@ -35,13 +35,13 @@ pub struct SnapShotCollector {
     map: HashMap<u64, ProcessSnapShot>,
 }
 
-struct ProcessesSnapShot {
-    processes: Processes,
+pub struct ProcessesSnapShot {
+    pub processes: Processes,
     time_stamp: Instant
 }
 
 pub struct ProcessesAggregator {
-    map: HashMap<String, ProcessesSnapShot>,
+    pub map: HashMap<String, ProcessesSnapShot>,
     timeout: u64,
 }
 
@@ -66,15 +66,16 @@ impl Process {
         (usage / total_time * 100.0) / cores as f64
     }
 
+    //does not consider cores unlike avg
     pub fn calculate_instant_cpu_usage(curr : &ProcessSnapShot, prev : &ProcessSnapShot, cores: u64) -> f64 {
         let delta_cpu = (curr.ultime + curr.stime) - (prev.ultime + prev.stime);
         let delta_time = curr.uptime - prev.uptime; // Δuptime = elapsed real time since start time is fixed
 
-        if delta_time <= 0.0 {
+        if delta_time <= 0.0 || prev.uptime == 0.0 {  // skip first tick
             return 0.0;
         }
 
-        ((delta_cpu / CLK_TCK as f64) / delta_time * 100.0) / cores as f64
+        (delta_cpu / CLK_TCK as f64) / delta_time * 100.0
     }
 }
 

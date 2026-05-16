@@ -12,23 +12,24 @@ use ratatui::{
     text::{Line, Text},
     widgets::{Block, Paragraph, Widget},
 };
-use shared::{Process, Processes, process};
+use shared::{Process, Processes, process, SnapShotCollector};
 use std::sync::mpsc::Receiver;
 use std::{io, thread};
+use shared::process::{ProcessesAggregator, ProcessesSnapShot};
 
 pub struct App {
     rx: Receiver<SystemEvent>,
-    processes: Processes,
-    connection: u64,
+    processes: ProcessesAggregator,
+    selected_machine: usize,
     exit: bool,
 }
 
 impl App {
-    pub fn new(receiver: Receiver<SystemEvent>) -> Self {
+    pub fn new(receiver: Receiver<SystemEvent>, timeout: u64) -> Self {
         Self {
             rx: receiver,
-            processes: Processes::default(),
-            connection: 0,
+            processes: ProcessesAggregator::new(timeout),
+            selected_machine: 0,
             exit: false,
         }
     }
@@ -55,7 +56,7 @@ impl App {
                 self.handle_key_event(key_event)
             }
             SystemEvent::ProcessEvent(v) => {
-                self.processes = v;
+                self.processes.put(v);
             }
             _ => (),
         };
@@ -64,6 +65,16 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
+            KeyCode::Left => {
+                if self.selected_machine > 0 {
+                    self.selected_machine -= 1;
+                }
+            },
+            KeyCode::Right => {
+                if self.selected_machine < self.processes.map.len() - 1 {
+                    self.selected_machine += 1;
+                }
+            },
             _ => {}
         }
     }
@@ -79,7 +90,7 @@ impl Widget for &App {
         Self: Sized,
     {
         let layout = Layout::vertical([
-            Constraint::Length(3),
+            Constraint::Length(6),
             Constraint::Fill(1),
             Constraint::Length(1),
         ])
@@ -88,37 +99,58 @@ impl Widget for &App {
         let content = Layout::horizontal([Constraint::Percentage(70), Constraint::Percentage(30)])
             .split(layout[1]);
 
-        self.render_summary(layout[0], buf);
-        self.render_processes(content[0], buf);
-        self.render_stats(content[1], buf);
-        self.render_instructions(layout[2], buf);
+        let keys: Vec<&String> = {
+            let mut k: Vec<&String> = self.processes.map.keys().collect();
+            k.sort();
+            k
+        };
+
+        if let Some(s) = keys.get(self.selected_machine) {
+            if let Some(v) = self.processes.map.get(*s) {
+                self.render_summary(layout[0], buf, v);
+                self.render_processes(content[0], buf, v);
+                self.render_stats(content[1], buf, v);
+                self.render_instructions(layout[2], buf);
+            }
+        }
+
     }
 }
 
 impl App {
-    fn render_summary(&self, area: Rect, buf: &mut Buffer) {
+    fn render_summary(&self, area: Rect, buf: &mut Buffer, p: &ProcessesSnapShot) {
+        let layout = Layout::vertical([
+            Constraint::Length(3),
+            Constraint::Length(3),
+        ]).split(area);
+
+        let short_id = p.processes.id.trim();
+        let id = format!(" ID: {} ", short_id);
         let text = format!(
             " CPU: {:.1}%   MEM: {} KB   Threads: {}   Processes: {} ",
-            self.processes.total_instant_cpu,
-            self.processes.total_pss,
-            self.processes.total_threads,
-            self.processes.processes.len()
+            p.processes.total_instant_cpu,
+            p.processes.total_pss,
+            p.processes.total_threads,
+            p.processes.processes.len()
         );
-        let block = Block::bordered()
+
+        let id_block = Block::bordered()
             .title(" Ocrop ".bold())
             .border_set(border::THICK);
-        Paragraph::new(text)
-            .centered()
-            .block(block)
-            .render(area, buf);
+        let summary_block = Block::bordered()
+            .title(" Summary ".bold())
+            .border_set(border::THICK);
+
+        Paragraph::new(id).centered().block(id_block).render(layout[0], buf);
+        Paragraph::new(text).centered().block(summary_block).render(layout[1], buf);
     }
 
-    fn render_processes(&self, area: Rect, buf: &mut Buffer) {
+    fn render_processes(&self, area: Rect, buf: &mut Buffer, p: &ProcessesSnapShot) {
         let header = Row::new(vec!["NAME", "PID", "CPU%", "MEM (KB)", "THREADS"])
             .style(Style::new().bold().fg(Color::Yellow))
             .bottom_margin(1);
 
-        let mut procs = self.processes.processes.clone();
+        let mut procs = p.processes.processes.clone();
         procs.sort_by(|a, b| {
             b.instant_cpu_usage
                 .partial_cmp(&a.instant_cpu_usage)
@@ -156,8 +188,8 @@ impl App {
             .render(area, buf);
     }
 
-    fn render_stats(&self, area: Rect, buf: &mut Buffer) {
-        let p = &self.processes;
+    fn render_stats(&self, area: Rect, buf: &mut Buffer, p: &ProcessesSnapShot) {
+        let p = &p.processes;
         let text = vec![
             Line::from(vec![
                 "Total CPU:  ".into(),

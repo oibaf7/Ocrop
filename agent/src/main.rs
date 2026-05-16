@@ -49,7 +49,7 @@ fn run(stream: &mut TcpStream, settings: &Settings, cores: u64) -> Result<(), Bo
     loop {
         let processes = collect_processes_data(&mut collector, cores)?;
         let json = serde_json::to_string(&processes)? + "\n";
-        println!("{}", json);
+        //println!("{}", json);
         stream.write_all(json.as_bytes())?;
         println!("Data has been sent!");
         thread::sleep(Duration::from_secs(settings.delay));

@@ -41,7 +41,7 @@ fn main() -> Result<(), io::Error> {
             }
         }
     });
-    ratatui::run(|terminal| App::new(rx).run(terminal))?;
+    ratatui::run(|terminal| App::new(rx, settings.timeout).run(terminal))?;
 
     Ok(())
 }
