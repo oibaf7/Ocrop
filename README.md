@@ -1,15 +1,28 @@
 # Ocrop
 
-A Linux system metrics collector written in Rust. Reads process data 
-from `/proc` and aggregates TCP connection stats.
+A distributed Linux process monitor written in Rust. Agents collect per-process 
+CPU and memory metrics from `/proc` and stream them over TCP to a central aggregator 
+with a live Ratatui TUI.
 
 ## Architecture
-- `agent` — reads /proc, computes CPU/memory metrics per process
-- `aggregator` — collects TCP connection data
-- `shared` — common types
+
+- `agent` — reads `/proc`, computes per-process CPU (delta-based) and PSS memory, streams over TCP
+- `aggregator` — receives from multiple agents, renders a live TUI with per-machine tab switching
+- `shared` — common types and serialization
 
 ## Run
-cargo run --bin collector
+
+```bash
+# start aggregator
+cargo run --bin aggregator
+
+# start agent (on same or remote machine)
+cargo run --bin agent
+```
+
+## Config
+
+Each binary has a `Config.toml` for timeout and polling interval.
 
 ## Notes
 - add count for TCP connections established
