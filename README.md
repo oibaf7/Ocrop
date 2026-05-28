@@ -24,6 +24,9 @@ cargo run --bin agent
 
 Each binary has a `Config.toml` for timeout and polling interval.
 
+## TUI
+<img width="2694" height="1102" alt="image" src="https://github.com/user-attachments/assets/1a8dab8f-98e2-4b43-beb2-a7f8810ef9c3" />
+
 ## Notes
 - add count for TCP connections established
 - implement into app processes aggregator rendering
