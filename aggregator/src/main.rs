@@ -17,6 +17,7 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 struct Settings {
     timeout: u64,
+    address: String,
 }
 
 fn main() -> Result<(), io::Error> {
@@ -28,7 +29,7 @@ fn main() -> Result<(), io::Error> {
     let (tx, rx) = mpsc::channel::<SystemEvent>();
     check_for_key_events(tx.clone());
     thread::spawn(move || {
-        let listener = TcpListener::bind("127.0.0.1:7878").expect("Could not bind TCP listener");
+        let listener = TcpListener::bind(settings.address).expect("Could not bind TCP listener");
         for stream in listener.incoming() {
             let tx = tx.clone();
             match stream {
@@ -58,7 +59,10 @@ fn handle_connection(tx: Sender<SystemEvent>, stream: TcpStream) {
             Ok(_) => match serde_json::from_slice::<Processes>(&bytes[..]) {
                 Ok(v) => {
                     //println!("{:#?}", v);
-                    tx.send(SystemEvent::ProcessEvent(v));
+                    if tx.send(SystemEvent::ProcessEvent(v)).is_err() {
+                        break;
+                    }
+
                 }
                 Err(e) => println!("Error {e}"),
             },
