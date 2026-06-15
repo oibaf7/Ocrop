@@ -9,7 +9,7 @@ const PROC_PATH: &str = "/proc";
 
 pub fn collect_processes_data(
     collector: &mut SnapShotCollector,
-    cores: u64
+    cores: u64,
 ) -> Result<Processes, Box<dyn Error>> {
     let machine_id = get_machine_id()?;
     let uptime = get_uptime()?;
@@ -37,7 +37,7 @@ pub fn get_process_details(
     id: u64,
     uptime: f64,
     collector: &mut SnapShotCollector,
-    cores: u64
+    cores: u64,
 ) -> Result<Process, Box<dyn Error>> {
     let base = PathBuf::from(PROC_PATH).join(id.to_string());
     let mut status_file = File::open(base.join("status"))?;
@@ -52,7 +52,8 @@ pub fn get_process_details(
         stime,
         uptime,
     };
-    let instant_cpu_usage = Process::calculate_instant_cpu_usage(&snapshot, &collector.get(id), cores);
+    let instant_cpu_usage =
+        Process::calculate_instant_cpu_usage(&snapshot, &collector.get(id), cores);
     collector.add(id, snapshot);
     Ok(Process::new(
         id,

@@ -1,18 +1,16 @@
 mod app;
 mod event;
-mod ui;
 
 use crate::app::App;
 use crate::event::{SystemEvent, check_for_key_events};
-use serde_json::Value;
+use config::{Config, File};
+use serde::Deserialize;
 use shared::Processes;
 use std::io::{BufRead, BufReader, Read};
 use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
 use std::{io, thread};
-use config::{Config, File};
-use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct Settings {
@@ -21,7 +19,8 @@ struct Settings {
 }
 
 fn main() -> Result<(), io::Error> {
-    let settings = Config::builder().add_source(File::with_name("Config.toml"))
+    let settings = Config::builder()
+        .add_source(File::with_name("Config.toml"))
         .build()
         .expect("File in the wrong format!")
         .try_deserialize::<Settings>()
@@ -62,7 +61,6 @@ fn handle_connection(tx: Sender<SystemEvent>, stream: TcpStream) {
                     if tx.send(SystemEvent::ProcessEvent(v)).is_err() {
                         break;
                     }
-
                 }
                 Err(e) => println!("Error {e}"),
             },

@@ -12,10 +12,10 @@ use ratatui::{
     text::{Line, Text},
     widgets::{Block, Paragraph, Widget},
 };
-use shared::{Process, Processes, process, SnapShotCollector};
+use shared::process::{ProcessesAggregator, ProcessesSnapShot};
+use shared::{Process, Processes, SnapShotCollector, process};
 use std::sync::mpsc::Receiver;
 use std::{io, thread};
-use shared::process::{ProcessesAggregator, ProcessesSnapShot};
 
 pub struct App {
     rx: Receiver<SystemEvent>,
@@ -69,12 +69,12 @@ impl App {
                 if self.selected_machine > 0 {
                     self.selected_machine -= 1;
                 }
-            },
+            }
             KeyCode::Right => {
                 if self.selected_machine < self.processes.map.len() - 1 {
                     self.selected_machine += 1;
                 }
-            },
+            }
             _ => {}
         }
     }
@@ -113,16 +113,12 @@ impl Widget for &App {
                 self.render_instructions(layout[2], buf);
             }
         }
-
     }
 }
 
 impl App {
     fn render_summary(&self, area: Rect, buf: &mut Buffer, p: &ProcessesSnapShot) {
-        let layout = Layout::vertical([
-            Constraint::Length(3),
-            Constraint::Length(3),
-        ]).split(area);
+        let layout = Layout::vertical([Constraint::Length(3), Constraint::Length(3)]).split(area);
 
         let short_id = p.processes.id.trim();
         let id = format!(" ID: {} ", short_id);
@@ -135,14 +131,26 @@ impl App {
         );
 
         let id_block = Block::bordered()
-            .title(" Ocrop ".bold())
+            .title(
+                format!(
+                    " Ocrop Number of Connections: {} ",
+                    self.processes.map.len()
+                )
+                .bold(),
+            )
             .border_set(border::THICK);
         let summary_block = Block::bordered()
             .title(" Summary ".bold())
             .border_set(border::THICK);
 
-        Paragraph::new(id).centered().block(id_block).render(layout[0], buf);
-        Paragraph::new(text).centered().block(summary_block).render(layout[1], buf);
+        Paragraph::new(id)
+            .centered()
+            .block(id_block)
+            .render(layout[0], buf);
+        Paragraph::new(text)
+            .centered()
+            .block(summary_block)
+            .render(layout[1], buf);
     }
 
     fn render_processes(&self, area: Rect, buf: &mut Buffer, p: &ProcessesSnapShot) {

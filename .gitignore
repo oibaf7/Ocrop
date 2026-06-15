@@ -12,3 +12,4 @@ dockerfile
 # OS
 .DS_Store
 Thumbs.db
+NOTES.md

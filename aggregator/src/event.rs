@@ -13,7 +13,8 @@ pub fn check_for_key_events(tx: Sender<SystemEvent>) {
         loop {
             if let Ok(e) = event::read() {
                 //handle error later, maybe end loop since means rx was dropped
-                tx.send(SystemEvent::KeyEvent(e));
+                tx.send(SystemEvent::KeyEvent(e))
+                    .expect("Unable to send Key Event!");
             }
         }
     });

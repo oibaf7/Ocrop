@@ -1,9 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant, SystemTime};
-use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Default, )]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Processes {
     pub id: String,
     pub processes: Vec<Process>,
@@ -13,8 +12,7 @@ pub struct Processes {
     pub total_pss: u64,
 }
 
-#[derive(Debug)]
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Process {
     pub pid: u64,     //from folder name
     pub name: String, //from the status file
@@ -37,7 +35,7 @@ pub struct SnapShotCollector {
 
 pub struct ProcessesSnapShot {
     pub processes: Processes,
-    time_stamp: Instant
+    time_stamp: Instant,
 }
 
 pub struct ProcessesAggregator {
@@ -45,11 +43,18 @@ pub struct ProcessesAggregator {
     timeout: u64,
 }
 
-
 const CLK_TCK: u64 = 100;
 
 impl Process {
-    pub fn new(pid: u64, name: String, rss: u64, pss: u64, avg_cpu_usage: f64, instant_cpu_usage: f64, threads: u64) -> Self {
+    pub fn new(
+        pid: u64,
+        name: String,
+        rss: u64,
+        pss: u64,
+        avg_cpu_usage: f64,
+        instant_cpu_usage: f64,
+        threads: u64,
+    ) -> Self {
         Self {
             pid,
             name,
@@ -60,18 +65,29 @@ impl Process {
             threads,
         }
     }
-    pub fn calculate_avg_cpu_usage(ultime: f64, stime: f64, start_time: f64, uptime: f64, cores: u64) -> f64 {
+    pub fn calculate_avg_cpu_usage(
+        ultime: f64,
+        stime: f64,
+        start_time: f64,
+        uptime: f64,
+        cores: u64,
+    ) -> f64 {
         let usage: f64 = (ultime + stime) / CLK_TCK as f64;
         let total_time = uptime - (start_time / CLK_TCK as f64);
         (usage / total_time * 100.0) / cores as f64
     }
 
     //does not consider cores unlike avg
-    pub fn calculate_instant_cpu_usage(curr : &ProcessSnapShot, prev : &ProcessSnapShot, cores: u64) -> f64 {
+    pub fn calculate_instant_cpu_usage(
+        curr: &ProcessSnapShot,
+        prev: &ProcessSnapShot,
+        cores: u64,
+    ) -> f64 {
         let delta_cpu = (curr.ultime + curr.stime) - (prev.ultime + prev.stime);
         let delta_time = curr.uptime - prev.uptime; // Δuptime = elapsed real time since start time is fixed
 
-        if delta_time <= 0.0 || prev.uptime == 0.0 {  // skip first tick
+        if delta_time <= 0.0 || prev.uptime == 0.0 {
+            // skip first tick
             return 0.0;
         }
 
@@ -87,7 +103,7 @@ impl Processes {
             total_threads: 0,
             total_pss: 0,
             total_avg_cpu: 0.0,
-            total_instant_cpu: 0.0
+            total_instant_cpu: 0.0,
         }
     }
 
@@ -117,7 +133,6 @@ impl SnapShotCollector {
     pub fn get(&mut self, pid: u64) -> ProcessSnapShot {
         self.map.remove(&pid).unwrap_or_default()
     }
-
 }
 
 impl Default for ProcessSnapShot {
@@ -134,20 +149,21 @@ impl ProcessesAggregator {
     pub fn new(timeout: u64) -> Self {
         ProcessesAggregator {
             map: HashMap::new(),
-            timeout
+            timeout,
         }
     }
     pub fn put(&mut self, processes: Processes) {
         let id = processes.id.clone();
-        let p = ProcessesSnapShot {processes, time_stamp: Instant::now()};
+        let p = ProcessesSnapShot {
+            processes,
+            time_stamp: Instant::now(),
+        };
         self.map.insert(id, p);
     }
 
     pub fn prune(&mut self) {
         self.map.retain(|_, snapshot| {
-           snapshot.time_stamp.elapsed() < Duration::from_secs(self.timeout)
+            snapshot.time_stamp.elapsed() < Duration::from_secs(self.timeout)
         });
     }
-
 }
-
