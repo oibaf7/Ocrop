@@ -53,7 +53,9 @@ fn handle_connection(tx: Sender<SystemEvent>, r: pulse::receiver::Receiver) {
                 }
                 pulse::receiver::Action::RequestRetransmit(addr) => {
                     //check how to handle error!
-                    r.send_retransmit(addr);
+                    if let Err(e) = r.send_retransmit_request(addr) {
+                        println!("Error while sending retransmitting! Error: {e}");
+                    }
                 }
             }
         }

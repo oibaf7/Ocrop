@@ -74,9 +74,7 @@ impl Receiver {
                 }
             }
         }
-
-        //check timers also based on state
-        //add one second thing for waiting for retransmit
+        
         for pair in self.connections.iter_mut() {
             let addr = pair.0;
             let connection = pair.1;
@@ -102,7 +100,7 @@ impl Receiver {
         actions
     }
 
-    pub fn send_retransmit(&mut self, addr_to: SocketAddr) -> Result<usize, Box<dyn Error>> {
+    pub fn send_retransmit_request(&mut self, addr_to: SocketAddr) -> Result<usize, Box<dyn Error>> {
         let connection = self.connections.get(&addr_to);
         if let None = connection {
             return Ok(0);
