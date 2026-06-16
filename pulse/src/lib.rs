@@ -1,2 +1,2 @@
-mod Receiver;
+pub mod receiver;
 pub mod sender;

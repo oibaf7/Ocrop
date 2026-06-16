@@ -10,6 +10,7 @@ enum State {
     WaitingForRetransmit,
 }
 
+#[derive(Debug)]
 pub enum Action {
     RequestRetransmit(SocketAddr),
     Received(Processes),
@@ -22,7 +23,7 @@ struct Connection {
     pub state: State,
 }
 
-struct Receiver {
+pub struct Receiver {
     address: SocketAddr,
     socket: UdpSocket,
     connections: HashMap<SocketAddr, Connection>,
@@ -46,7 +47,7 @@ impl Receiver {
     pub fn tick(&mut self) -> Vec<Action> {
         //think abt fragmentation eventually
         let mut actions = Vec::new();
-        let mut buf = [0u8; 1500];
+        let mut buf = [0u8; 65536];
         while let Ok(r) = self.socket.recv(&mut buf) {
             if let Ok(p) = serde_json::from_slice::<Packet>(&buf[..r]) {
                 let sender = p.sender_address();

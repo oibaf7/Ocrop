@@ -10,7 +10,7 @@ pub enum Action {
     Nothing,
 }
 
-struct Sender {
+pub struct Sender {
     address: SocketAddr,
     socket: UdpSocket,
     last_sent: usize,

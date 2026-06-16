@@ -6,11 +6,11 @@ use crate::event::{SystemEvent, check_for_key_events};
 use config::{Config, File};
 use serde::Deserialize;
 use shared::Processes;
-use std::io::{BufRead, BufReader, Read};
-use std::net::{TcpListener, TcpStream};
+use std::io::{stdout, BufRead, BufReader, Read};
 use std::sync::mpsc;
-use std::sync::mpsc::Sender;
+use std::sync::mpsc::{Receiver, Sender};
 use std::{io, thread};
+use std::time::Duration;
 
 #[derive(Deserialize)]
 struct Settings {
@@ -28,17 +28,10 @@ fn main() -> Result<(), io::Error> {
     let (tx, rx) = mpsc::channel::<SystemEvent>();
     check_for_key_events(tx.clone());
     thread::spawn(move || {
-        let listener = TcpListener::bind(settings.address).expect("Could not bind TCP listener");
-        for stream in listener.incoming() {
-            let tx = tx.clone();
-            match stream {
-                Ok(s) => {
-                    thread::spawn(move || handle_connection(tx, s));
-                }
-                Err(e) => {
-                    println!("Error while receiving stream. Error: {e}");
-                }
-            }
+        //maybe remove from thread later
+        loop {
+            let receiver = pulse::receiver::Receiver::new(settings.address.parse().expect("Invalid Address"));
+            handle_connection(tx.clone(), receiver);
         }
     });
     ratatui::run(|terminal| App::new(rx, settings.timeout).run(terminal))?;
@@ -46,25 +39,25 @@ fn main() -> Result<(), io::Error> {
     Ok(())
 }
 
-fn handle_connection(tx: Sender<SystemEvent>, stream: TcpStream) {
-    let mut buf = BufReader::new(&stream);
+fn handle_connection(tx: Sender<SystemEvent>, r: pulse::receiver::Receiver) {
+    let mut r = r;
     loop {
-        let mut bytes = Vec::new();
-        match buf.read_until("\n".as_bytes()[0], &mut bytes) {
-            Ok(0) => {
-                println!("Connection closed!");
-                break;
-            }
-            Ok(_) => match serde_json::from_slice::<Processes>(&bytes[..]) {
-                Ok(v) => {
-                    //println!("{:#?}", v);
-                    if tx.send(SystemEvent::ProcessEvent(v)).is_err() {
+        let actions = r.tick();
+        //println!("{:#?}", actions);
+        for action in actions {
+            match action {
+                pulse::receiver::Action::Received(p) => {
+                    if tx.send(SystemEvent::ProcessEvent(p)).is_err() {
                         break;
                     }
+                },
+                pulse::receiver::Action::RequestRetransmit(addr) => {
+                    //check how to handle error!
+                    r.send_retransmit(addr);
                 }
-                Err(e) => println!("Error {e}"),
-            },
-            Err(e) => println!("Error: {e}"),
+
+            }
         }
+        thread::sleep(Duration::from_millis(50));
     }
 }
