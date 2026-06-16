@@ -17,7 +17,6 @@ pub enum Action {
 }
 
 struct Connection {
-    pub address: SocketAddr, //maybe remove
     pub last_received: usize,
     pub curr_timer: Instant,
     pub state: State,
@@ -63,7 +62,6 @@ impl Receiver {
                             }
                         } else {
                             let new_connection = Connection {
-                                address: sender,
                                 last_received: id,
                                 curr_timer: Instant::now(),
                                 state: State::Regular,

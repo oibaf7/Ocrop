@@ -28,7 +28,6 @@ fn main() -> Result<(), io::Error> {
     let (tx, rx) = mpsc::channel::<SystemEvent>();
     check_for_key_events(tx.clone());
     thread::spawn(move || {
-        //maybe remove from thread later
         loop {
             let receiver =
                 pulse::receiver::Receiver::new(settings.address.parse().expect("Invalid Address"));
