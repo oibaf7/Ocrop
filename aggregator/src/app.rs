@@ -124,9 +124,9 @@ impl App {
         let id = format!(" ID: {} ", short_id);
         let text = format!(
             " CPU: {:.1}%   MEM: {} KB   Threads: {}   Processes: {} ",
-            p.processes.total_instant_cpu,
-            p.processes.total_pss,
-            p.processes.total_threads,
+            p.processes.total_instant_cpu(),
+            p.processes.total_pss(),
+            p.processes.total_threads(),
             p.processes.processes.len()
         );
 
@@ -201,19 +201,19 @@ impl App {
         let text = vec![
             Line::from(vec![
                 "Total CPU:  ".into(),
-                format!("{:.1}%", p.total_instant_cpu).yellow(),
+                format!("{:.1}%", p.total_instant_cpu()).yellow(),
             ]),
             Line::from(vec![
                 "Avg CPU:    ".into(),
-                format!("{:.1}%", p.total_avg_cpu).yellow(),
+                format!("{:.1}%", p.total_avg_cpu()).yellow(),
             ]),
             Line::from(vec![
                 "Total PSS:  ".into(),
-                format!("{} KB", p.total_pss).yellow(),
+                format!("{} KB", p.total_pss()).yellow(),
             ]),
             Line::from(vec![
                 "Threads:    ".into(),
-                p.total_threads.to_string().yellow(),
+                p.total_threads().to_string().yellow(),
             ]),
             Line::from(vec![
                 "Processes:  ".into(),

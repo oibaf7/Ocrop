@@ -6,11 +6,11 @@ use crate::event::{SystemEvent, check_for_key_events};
 use config::{Config, File};
 use serde::Deserialize;
 use shared::Processes;
-use std::io::{stdout, BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, Read, stdout};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
-use std::{io, thread};
 use std::time::Duration;
+use std::{io, thread};
 
 #[derive(Deserialize)]
 struct Settings {
@@ -30,7 +30,8 @@ fn main() -> Result<(), io::Error> {
     thread::spawn(move || {
         //maybe remove from thread later
         loop {
-            let receiver = pulse::receiver::Receiver::new(settings.address.parse().expect("Invalid Address"));
+            let receiver =
+                pulse::receiver::Receiver::new(settings.address.parse().expect("Invalid Address"));
             handle_connection(tx.clone(), receiver);
         }
     });
@@ -50,12 +51,11 @@ fn handle_connection(tx: Sender<SystemEvent>, r: pulse::receiver::Receiver) {
                     if tx.send(SystemEvent::ProcessEvent(p)).is_err() {
                         break;
                     }
-                },
+                }
                 pulse::receiver::Action::RequestRetransmit(addr) => {
                     //check how to handle error!
                     r.send_retransmit(addr);
                 }
-
             }
         }
         thread::sleep(Duration::from_millis(50));

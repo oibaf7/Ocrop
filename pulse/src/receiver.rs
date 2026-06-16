@@ -45,11 +45,10 @@ impl Receiver {
     }
 
     pub fn tick(&mut self) -> Vec<Action> {
-        //think abt fragmentation eventually
         let mut actions = Vec::new();
         let mut buf = [0u8; 65536];
         while let Ok(r) = self.socket.recv(&mut buf) {
-            if let Ok(p) = serde_json::from_slice::<Packet>(&buf[..r]) {
+            if let Ok(p) = bincode::deserialize::<Packet>(&buf[..r]) {
                 let sender = p.sender_address();
                 let id = p.packet_id();
                 match p.get_ownership_of_packet_kind() {
@@ -63,11 +62,15 @@ impl Receiver {
                                 actions.push(Action::Received(processes));
                             }
                         } else {
-                            let new_connection = Connection {address: sender, last_received: id, curr_timer: Instant::now(), state: State::Regular};
+                            let new_connection = Connection {
+                                address: sender,
+                                last_received: id,
+                                curr_timer: Instant::now(),
+                                state: State::Regular,
+                            };
                             self.connections.insert(sender, new_connection);
                             actions.push(Action::Received(processes));
                         }
-
                     }
                     _ => (),
                 }
@@ -87,7 +90,7 @@ impl Receiver {
                         connection.state = State::WaitingForRetransmit;
                         actions.push(Action::RequestRetransmit(*addr));
                     }
-                },
+                }
                 State::WaitingForRetransmit => {
                     //every 1 second
                     if connection.curr_timer.elapsed().as_secs() >= 1 {

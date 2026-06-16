@@ -35,8 +35,7 @@ impl Sender {
         if self.curr_timer.elapsed() >= Duration::from_secs(5) {
             return Action::Send;
         }
-
-        //keep as is for now -> future fragment???
+        
         let mut buf = [0u8; 1500];
         if let Ok(r) = self.socket.recv(&mut buf) {
             if let Ok(p) = serde_json::from_slice::<Packet>(&buf[..r]) {
@@ -66,8 +65,8 @@ impl Sender {
             self.last_sent,
             PacketKind::Data(processes),
         );
-        let json = serde_json::to_string(&packet)?;
-        let r = self.socket.send_to(json.as_bytes(), addr_to)?;
+        let json = bincode::serialize(&packet)?;
+        let r = self.socket.send_to(&json, addr_to)?;
         self.curr_timer = Instant::now();
         Ok(r)
     }

@@ -2,14 +2,13 @@ mod proc;
 
 use crate::proc::collect_processes_data;
 use config::{Config, File};
+use pulse::sender::{Action, Sender};
 use serde::Deserialize;
 use shared::SnapShotCollector;
 use std::error::Error;
 use std::io::Write;
-use std::net::TcpStream;
 use std::thread;
 use std::time::Duration;
-use pulse::sender::{Action, Sender};
 
 #[derive(Debug, Deserialize)]
 struct Settings {
@@ -36,7 +35,7 @@ fn main() {
         }
     }
 }
-//clean up error handling
+
 fn run(settings: &Settings, cores: u64) -> Result<(), Box<dyn Error>> {
     let mut collector = SnapShotCollector::new();
     let mut sender = Sender::new(settings.address.parse().expect("Invalid Address"));
@@ -46,12 +45,14 @@ fn run(settings: &Settings, cores: u64) -> Result<(), Box<dyn Error>> {
             Action::Retransmit | Action::Send => {
                 let processes = collect_processes_data(&mut collector, cores);
                 if let Ok(p) = processes {
-                    let size = sender.send(p, settings.addr_to.parse().expect("Invalid Address"))?;
+                    println!("{}", p.processes.len());
+                    let size =
+                        sender.send(p, settings.addr_to.parse().expect("Invalid Address"))?;
                     println!("Data has been sent! Size: {size}");
                     continue;
                 }
                 println!("Error while reading data!");
-            },
+            }
             _ => (),
         }
 

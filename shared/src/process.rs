@@ -6,10 +6,6 @@ use std::time::{Duration, Instant, SystemTime};
 pub struct Processes {
     pub id: String,
     pub processes: Vec<Process>,
-    pub total_threads: u64,
-    pub total_avg_cpu: f64,
-    pub total_instant_cpu: f64,
-    pub total_pss: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -100,19 +96,25 @@ impl Processes {
         Self {
             id,
             processes: Vec::new(),
-            total_threads: 0,
-            total_pss: 0,
-            total_avg_cpu: 0.0,
-            total_instant_cpu: 0.0,
         }
     }
 
-    pub fn finalize(&mut self) {
-        self.total_threads = self.processes.iter().map(|x| x.threads).sum();
-        self.total_pss = self.processes.iter().map(|x| x.pss).sum();
-        self.total_avg_cpu = self.processes.iter().map(|x| x.avg_cpu_usage).sum();
-        self.total_instant_cpu = self.processes.iter().map(|x| x.instant_cpu_usage).sum();
+    pub fn total_threads(&self) -> u64 {
+        self.processes.iter().map(|x| x.threads).sum()
     }
+    pub fn total_pss(&self) -> u64 {
+        self.processes.iter().map(|x| x.pss).sum()
+
+    }
+    pub fn total_avg_cpu(&self) -> f64 {
+        self.processes.iter().map(|x| x.avg_cpu_usage).sum()
+    }
+
+    pub fn total_instant_cpu(&self) -> f64 {
+        self.processes.iter().map(|x| x.instant_cpu_usage).sum()
+    }
+
+
 
     pub fn add_process(&mut self, process: Process) {
         self.processes.push(process)

@@ -18,7 +18,6 @@ pub fn collect_processes_data(
         .into_iter()
         .filter_map(|x| get_process_details(x, uptime, collector, cores).ok())
         .for_each(|x| processes.add_process(x));
-    processes.finalize();
 
     Ok(processes)
 }
