@@ -16,6 +16,7 @@ use std::{io, thread};
 struct Settings {
     timeout: u64,
     address: String,
+    delay: usize,
 }
 
 fn main() -> Result<(), io::Error> {
@@ -30,7 +31,7 @@ fn main() -> Result<(), io::Error> {
     thread::spawn(move || {
         loop {
             let receiver =
-                pulse::receiver::Receiver::new(settings.address.parse().expect("Invalid Address"));
+                pulse::receiver::Receiver::new(settings.address.parse().expect("Invalid Address"), settings.delay);
             handle_connection(tx.clone(), receiver);
         }
     });
@@ -43,7 +44,6 @@ fn handle_connection(tx: Sender<SystemEvent>, r: pulse::receiver::Receiver) {
     let mut r = r;
     loop {
         let actions = r.tick();
-        //println!("{:#?}", actions);
         for action in actions {
             match action {
                 pulse::receiver::Action::Received(p) => {
