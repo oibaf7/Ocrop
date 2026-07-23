@@ -31,7 +31,7 @@ pub struct Receiver {
 }
 
 impl Receiver {
-    pub fn new(address: SocketAddr, delay: usize,) -> Self {
+    pub fn new(address: SocketAddr, delay: usize) -> Self {
         let socket = UdpSocket::bind(&address).expect("Unable to create socket!");
         socket
             .set_read_timeout(Some(Duration::from_millis(10)))
@@ -82,7 +82,7 @@ impl Receiver {
             let connection = pair.1;
             match connection.state {
                 State::Regular => {
-                    //been waiting for 6 seconds, instead of usual 5
+                    //e.g., been waiting for 6 seconds, instead of usual 5
                     if connection.curr_timer.elapsed().as_secs() as usize >= self.delay + 1 {
                         connection.curr_timer = Instant::now();
                         connection.state = State::WaitingForRetransmit;

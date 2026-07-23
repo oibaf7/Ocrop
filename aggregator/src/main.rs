@@ -29,11 +29,9 @@ fn main() -> Result<(), io::Error> {
     let (tx, rx) = mpsc::channel::<SystemEvent>();
     check_for_key_events(tx.clone());
     thread::spawn(move || {
-        loop {
-            let receiver =
-                pulse::receiver::Receiver::new(settings.address.parse().expect("Invalid Address"), settings.delay);
-            handle_connection(tx.clone(), receiver);
-        }
+        let receiver =
+            pulse::receiver::Receiver::new(settings.address.parse().expect("Invalid Address"), settings.delay);
+        handle_connection(tx.clone(), receiver);
     });
     ratatui::run(|terminal| App::new(rx, settings.timeout).run(terminal))?;
 
@@ -58,6 +56,5 @@ fn handle_connection(tx: Sender<SystemEvent>, r: pulse::receiver::Receiver) {
                 }
             }
         }
-        thread::sleep(Duration::from_millis(50));
     }
 }
